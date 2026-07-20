@@ -66,6 +66,8 @@ MD.MState {
     stateLayerColor: "transparent"
 
     textColor: {
+        if (!root.ctx)
+            return "transparent"
         switch (root.type) {
         case MD.Enum.IBtOutlined:
             if (root.item.checked)
@@ -91,6 +93,8 @@ MD.MState {
         }
     }
     backgroundColor: {
+        if (!root.ctx)
+            return "transparent"
         switch (root.type) {
         case MD.Enum.IBtStandard:
             return "transparent";
@@ -119,8 +123,10 @@ MD.MState {
             name: "disabled"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
-                root.textColor: root.ctx.color.on_surface
+                root.textColor: root.ctx ? root.ctx.color.on_surface : "transparent"
                 root.backgroundColor: {
+                    if (!root.ctx)
+                        return "transparent"
                     switch (root.type) {
                     case MD.Enum.IBtOutlined:
                     case MD.Enum.IBtStandard:
@@ -139,6 +145,8 @@ MD.MState {
                 root.elevation: MD.Token.elevation.level1
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: {
+                    if (!root.ctx)
+                        return "transparent"
                     let c = null;
                     switch (root.type) {
                     case MD.Enum.IBtFilled:
@@ -176,6 +184,8 @@ MD.MState {
                 root.elevation: MD.Token.elevation.level2
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 root.stateLayerColor: {
+                    if (!root.ctx)
+                        return "transparent"
                     let c = null;
                     switch (root.type) {
                     case MD.Enum.IBtFilled:
