@@ -516,12 +516,59 @@ MD.Page {
                     ComponentCard {
                         title: 'SnakeBar'
 
-                        MD.Button {
-                            Layout.alignment: Qt.AlignHCenter
-                            mdState.type: MD.Enum.BtText
-                            text: 'Show snakeBar'
-                            onClicked: {
-                                m_snake.show("test");
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 2
+                            columnSpacing: 8
+                            rowSpacing: 8
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Single line'
+                                onClicked: m_snake.show(
+                                    "Single-line snackbar with action",
+                                    6000,
+                                    0,
+                                    m_snake_action,
+                                    344)
+                            }
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Two lines'
+                                onClicked: m_snake.show(
+                                    "Two-line snackbar with action",
+                                    6000,
+                                    0,
+                                    m_snake_action,
+                                    280)
+                            }
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Longer action'
+                                onClicked: m_snake.show(
+                                    "Two-line snackbar\nwith longer action",
+                                    6000,
+                                    0,
+                                    m_snake_longer_action,
+                                    344,
+                                    true)
+                            }
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Details'
+                                onClicked: m_snake.show(
+                                    "Import completed with additional details. 128 records were processed, 124 were added, three duplicates were skipped, and one record needs manual review before it can be published.",
+                                    6000,
+                                    0,
+                                    m_snake_action,
+                                    420)
                             }
                         }
                     }
@@ -698,6 +745,11 @@ MD.Page {
                             MD.SuggestionChip {
                                 text: 'Suggestion'
                             }
+                            MD.EmbedChip {
+                                text: 'Embed'
+                                icon.name: MD.Token.icon.description
+                                trailingIconName: MD.Token.icon.close
+                            }
                         }
                         RowLayout {
                             spacing: 12
@@ -719,6 +771,22 @@ MD.Page {
                             MD.SuggestionChip {
                                 text: 'Suggestion'
                                 enabled: false
+                            }
+                            MD.EmbedChip {
+                                text: 'Embed'
+                                icon.name: MD.Token.icon.description
+                                trailingIconName: MD.Token.icon.close
+                                enabled: false
+                            }
+                        }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+
+                            MD.AssistChip {
+                                Layout.preferredWidth: 180
+                                Layout.maximumWidth: 180
+                                text: 'A long chip label constrained by its parent'
+                                icon.name: MD.Token.icon.event
                             }
                         }
                     }
@@ -749,6 +817,7 @@ MD.Page {
                             MD.Menu {
                                 id: m_menu
                                 y: parent.height
+                                width: 240
                                 MD.MenuItem {
                                     text: 'First'
                                 }
@@ -758,6 +827,39 @@ MD.Page {
                                 MD.MenuItem {
                                     text: 'Third'
                                 }
+                                MD.MenuItem {
+                                    text: 'long long long long long long long long long'
+                                    icon.name: MD.Token.icon.description
+                                }
+                            }
+                        }
+                        MD.Button {
+                            Layout.alignment: Qt.AlignHCenter
+                            mdState.type: MD.Enum.BtText
+                            text: 'Open action menu'
+                            onClicked: m_action_menu.open()
+
+                            MD.Action {
+                                id: m_action_menu_first
+                                text: 'First action'
+                                icon.name: MD.Token.icon.add
+                            }
+
+                            MD.Action {
+                                id: m_action_menu_second
+                                text: 'Second action'
+                            }
+
+                            MD.Action {
+                                id: m_action_menu_long
+                                text: 'long long long long long long long long long'
+                                icon.name: MD.Token.icon.description
+                            }
+
+                            MD.ActionMenu {
+                                id: m_action_menu
+                                y: parent.height
+                                actions: [m_action_menu_first, m_action_menu_second, m_action_menu_long]
                             }
                         }
                         Row {
@@ -1709,6 +1811,16 @@ MD.Page {
                 }
             }
         }
+    }
+
+    MD.Action {
+        id: m_snake_action
+        text: 'Action'
+    }
+
+    MD.Action {
+        id: m_snake_longer_action
+        text: 'Longer action'
     }
 
     MD.SnakeView {

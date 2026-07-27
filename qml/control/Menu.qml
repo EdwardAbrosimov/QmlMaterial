@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Window
 import QtQml.Models
 
 import Qcm.Material as MD
@@ -11,8 +10,13 @@ T.Menu {
 
     property alias mdState: item_state
     property bool autoClose: false
+    property real maximumWidth: 280
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
+    implicitWidth: {
+        const preferredWidth = Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                                        implicitContentWidth + leftPadding + rightPadding);
+        return maximumWidth > 0 ? Math.min(preferredWidth, maximumWidth) : preferredWidth;
+    }
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
     margins: 0
@@ -36,7 +40,7 @@ T.Menu {
     }
 
     property var model: null
-    property alias contentDelegate: m_model.delegate
+    property alias contentDelegate: m_instantiator.delegate
 
     enter: Transition {
         NumberAnimation {
@@ -70,28 +74,36 @@ T.Menu {
         }
     }
 
-    DelegateModel {
-        id: m_model
-        model: control.model
-    }
-
-    contentItem: ListView {
+    contentItem: MD.ListView {
+        // Qt 6.8-6.11 do not propagate menu item implicit widths to the content item.
+        implicitWidth: {
+            let preferredWidth = 0;
+            for (let index = 0; index < control.count; ++index) {
+                const item = control.itemAt(index);
+                if (item && (!control.visible || item.visible))
+                    preferredWidth = Math.max(preferredWidth, item.implicitWidth);
+            }
+            return preferredWidth;
+        }
         implicitHeight: contentHeight
         model: {
-            if (control.model) {
-                if (control.contentDelegate) {
-                    return m_model;
-                } else if (control.model instanceof DelegateModel) {
-                    return control.model;
-                } else if (control.model != control.contentModel) {
-                    return m_model;
-                }
+            if (!control.contentDelegate && control.model instanceof DelegateModel) {
+                return control.model;
             }
             return control.contentModel;
         }
-        interactive: Window.window ? contentHeight + control.topPadding + control.bottomPadding > Window.window.height : false
+        interactive: contentHeight + control.topPadding + control.bottomPadding > control.height
         keyNavigationEnabled: false
         T.ScrollIndicator.vertical: MD.ScrollIndicator {}
+    }
+
+    Instantiator {
+        id: m_instantiator
+        active: control.contentDelegate !== null
+        model: control.model
+
+        onObjectAdded: (index, object) => control.insertItem(index, object)
+        onObjectRemoved: (index, object) => control.removeItem(object)
     }
 
     background: MD.ElevationRectangle {

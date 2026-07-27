@@ -4,6 +4,7 @@ endif()
 if(NOT TARGET Qt6::GuiPrivate)
   find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
 endif()
+find_package(Qt6 REQUIRED COMPONENTS Test)
 
 enable_testing()
 
@@ -93,7 +94,55 @@ add_executable(qm_grab qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)
 
-set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress
+add_executable(toolbar_dynamic_visibility
+  toolbar_dynamic_visibility.cpp
+  ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout.cpp
+  ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout_delegate.cpp
+  ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout_delegate.hpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/layout/toolbar_layout.hpp)
+target_include_directories(toolbar_dynamic_visibility PRIVATE
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/src/layout)
+target_compile_definitions(toolbar_dynamic_visibility PRIVATE
+  TOOLBAR_DYNAMIC_QML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/toolbar_dynamic_visibility.qml")
+target_link_libraries(toolbar_dynamic_visibility PRIVATE
+  Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick)
+set_target_properties(toolbar_dynamic_visibility PROPERTIES AUTOMOC ON)
+add_test(NAME toolbar_dynamic_visibility COMMAND toolbar_dynamic_visibility)
+set_tests_properties(toolbar_dynamic_visibility PROPERTIES
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(lite_layout lite_layout.cpp)
+target_include_directories(lite_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(lite_layout PRIVATE
+  qml_material_layouts Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
+add_dependencies(lite_layout qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(lite_layout PRIVATE qml_material_layoutsplugin)
+endif()
+set_target_properties(lite_layout PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(lite_layout)
+add_test(NAME lite_layout COMMAND lite_layout)
+set_tests_properties(lite_layout PROPERTIES
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+
+add_executable(control_layout control_layout.cpp)
+target_include_directories(control_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(control_layout PRIVATE
+  qml_material qml_material_layouts
+  Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
+add_dependencies(control_layout qml_materialplugin qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(control_layout PRIVATE
+    qml_materialplugin qml_material_layoutsplugin)
+endif()
+set_target_properties(control_layout PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(control_layout)
+add_test(NAME control_layout COMMAND control_layout)
+set_tests_properties(control_layout PROPERTIES
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+
+set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button
@@ -104,7 +153,7 @@ foreach(scene ${VISUAL_SCENES})
     NAME visual_${scene}
     COMMAND bash -c
       "LIBGL_ALWAYS_SOFTWARE=1 \
-       QT_QPA_PLATFORM=eglfs \
+       QT_QPA_PLATFORM=\${QT_QPA_PLATFORM:-eglfs} \
        QML_IMPORT_PATH=${CMAKE_BINARY_DIR}/qml_modules \
        $<TARGET_FILE:qm_grab> \
          ${CMAKE_CURRENT_SOURCE_DIR}/scenes/${scene}.qml \
