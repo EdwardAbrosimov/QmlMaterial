@@ -35,26 +35,45 @@ MD.TextField {
     }
 
     function _currentDateOrToday() {
-        if (_isValidDate(value))
-            return value
-        return new Date()
+        return _isValidDate(value) ? value : new Date()
+    }
+
+    function _inBounds(d) {
+        if (!d)
+            return allowEmpty
+        if (minDate && d.getTime() < minDate.getTime())
+            return false
+        if (maxDate && d.getTime() > maxDate.getTime())
+            return false
+        return true
+    }
+
+    function _makeDate(year, month, day) {
+        if (month < 0 || month > 11 || day < 1 || day > 31)
+            return undefined
+        const d = new Date(year, month, day)
+        if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day)
+            return undefined
+        return d
     }
 
     function syncDisplayFromValue() {
-        _syncingText = true
         if (allowEmpty && !_isValidDate(value))
             text = ""
         else
             text = Qt.formatDate(_currentDateOrToday(), dateFormat)
-        _syncingText = false
     }
 
     function setDate(d) {
+        if (!_isValidDate(d))
+            return
         value = d
         syncDisplayFromValue()
     }
 
     function clearDate() {
+        if (!allowEmpty)
+            return
         value = null
         syncDisplayFromValue()
     }
@@ -72,46 +91,19 @@ MD.TextField {
         const raw = ("" + s).trim()
         if (!raw.length)
             return allowEmpty ? null : undefined
+
         if (isEuropeanFormat) {
             const m = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
             if (!m)
                 return undefined
-            const da = parseInt(m[1], 10)
-            const mo = parseInt(m[2], 10) - 1
-            const y = parseInt(m[3], 10)
-            if (mo < 0 || mo > 11 || da < 1 || da > 31)
-                return undefined
-            const d = new Date(y, mo, da)
-            if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== da)
-                return undefined
-            return d
+            return _makeDate(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10))
         }
-        const norm = raw.replace(/\//g, "-")
-        const m = norm.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+
+        const m = raw.replace(/\//g, "-").match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
         if (!m)
             return undefined
-        const y = parseInt(m[1], 10)
-        const mo = parseInt(m[2], 10) - 1
-        const da = parseInt(m[3], 10)
-        if (mo < 0 || mo > 11 || da < 1 || da > 31)
-            return undefined
-        const d = new Date(y, mo, da)
-        if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== da)
-            return undefined
-        return d
+        return _makeDate(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10))
     }
-
-    function _inBounds(d) {
-        if (!d)
-            return allowEmpty
-        if (minDate && d.getTime() < minDate.getTime())
-            return false
-        if (maxDate && d.getTime() > maxDate.getTime())
-            return false
-        return true
-    }
-
-    property bool _syncingText: false
 
     Component.onCompleted: syncDisplayFromValue()
     onValueChanged: syncDisplayFromValue()
@@ -207,13 +199,10 @@ MD.TextField {
                         mdState.type: MD.Enum.BtFilled
                         onClicked: {
                             const d = m_picker.selectedDate
-                            if (!_inBounds(d)) {
-                                pickerPopup.close()
-                                return
+                            if (_inBounds(d)) {
+                                control.setDate(d)
+                                control.modified(d)
                             }
-                            control.value = d
-                            control.syncDisplayFromValue()
-                            control.modified(d)
                             pickerPopup.close()
                         }
                     }

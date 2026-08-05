@@ -28,12 +28,18 @@ T.ComboBox {
 
     delegate: MD.MenuItem {
         required property var model
+        required property var modelData
         required property int index
 
         width: ListView.view.width
-        text: model[control.textRole]
+        text: control.textRole.length > 0 ? model[control.textRole] : ("" + modelData)
         selected: control.currentIndex == index
         highlighted: control.highlightedIndex == index
+        onClicked: {
+            control.currentIndex = index
+            control.activated(index)
+            control.popup.close()
+        }
     }
 
     indicator: MD.Icon {
