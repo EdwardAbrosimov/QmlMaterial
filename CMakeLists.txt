@@ -46,7 +46,12 @@ if(UNIX AND NOT APPLE)
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui Qml ShaderTools QuickPrivate)
+find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui Qml ShaderTools)
+# Qt < ~6.9 often exposes Qt6::QuickPrivate via Quick; Qt 6.9+ needs an
+# explicit private package (aqt 6.8.3 CI has no Qt6QuickPrivateConfig).
+if(NOT TARGET Qt6::QuickPrivate)
+  find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
+endif()
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   find_package(Qt6 REQUIRED COMPONENTS DBus)
@@ -101,6 +106,10 @@ set(SOURCES
     src/control/page_context.cpp
     src/control/color_picker.cpp
     src/control/popup.cpp
+    src/control/popup_presenter.cpp
+    include/qml_material/control/popup_presenter.hpp
+    src/control/tool_tip.cpp
+    include/qml_material/control/tool_tip.hpp
     src/layout/width_provider.cpp
     src/layout/toolbar_layout.cpp
     src/layout/toolbar_layout_delegate.cpp
@@ -125,6 +134,7 @@ set(SOURCES
     include/qml_material/carousel/carousel_strategy.hpp
     include/qml_material/carousel/carousel_view.hpp
     src/model/palette_model.cpp
+    src/model/appstream_release_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
     src/token/icon.cpp
@@ -173,7 +183,7 @@ set(QML_FILES
     qml/control/Popup.qml
     qml/control/BottomSheet.qml
     qml/control/Switch.qml
-    qml/control/ToolTip.qml
+    qml/control/PlainToolTip.qml
     qml/control/TabBar.qml
     qml/control/TabButton.qml
     qml/control/TableViewDelegate.qml
@@ -326,6 +336,8 @@ set(QML_FILES
     qml/component/path/RoundPath.qml
     qml/component/path/RectPath.qml
     qml/component/ListBusyFooter.qml
+    qml/component/Changelog.qml
+    qml/component/ChangelogDialog.qml
     qml/component/helper/ItemHolder.qml
     qml/container/PageContainer.qml)
 
@@ -553,14 +565,6 @@ target_include_directories(
   PRIVATE "include/${LIBNAME}" src)
 
 add_subdirectory(third_party)
-if(QM_BUILD_EXAMPLE)
-  add_subdirectory(example)
-endif()
-if(QM_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
-
 target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick
@@ -570,6 +574,21 @@ target_link_libraries(
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   target_link_libraries(${LIBNAME} PRIVATE Qt6::DBus)
+endif()
+
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  add_subdirectory(qml)
+  target_link_libraries("${LIBNAME}plugin"
+                        PUBLIC qml_material_qml_imports
+                               "${LAYOUT_LIBNAME}plugin")
+endif()
+
+if(QM_BUILD_EXAMPLE)
+  add_subdirectory(example)
+endif()
+if(QM_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
